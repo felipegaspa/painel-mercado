@@ -1,0 +1,56 @@
+name: Teste de fontes
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Testar fontes
+        shell: bash
+        run: |
+          UA="Mozilla/5.0"
+          t() {
+            local nome="$1" url="$2"
+            local info
+            info=$(curl -sS -L -m 60 -A "$UA" -o "out_$nome" -w "http %{http_code} | %{size_download}B | %{time_total}s | %{content_type}" "$url" 2>&1)
+            echo "################ $nome"
+            echo "$info"
+            echo "--- início:"; head -c 300 "out_$nome" 2>/dev/null | tr '\r' ' '; echo
+            echo "--- fim:"; tail -c 200 "out_$nome" 2>/dev/null | tr '\r' ' '; echo
+          }
+
+          # Câmbio - Banco Central SGS (1 = dólar venda, 21619 = euro venda)
+          t sgs_dolar "https://api.bcb.gov.br/dados/serie/bcdata.sgs.1/dados?formato=json&dataInicial=01/11/2021&dataFinal=30/10/2026"
+          t sgs_euro  "https://api.bcb.gov.br/dados/serie/bcdata.sgs.21619/dados?formato=json&dataInicial=01/11/2021&dataFinal=30/10/2026"
+
+          # FRED - CSV público, sem chave
+          for s in DCOILBRENTEU DCOILWTICO SP500 DJIA NASDAQCOM; do
+            t "fred_$s" "https://fred.stlouisfed.org/graph/fredgraph.csv?id=$s"
+          done
+
+          # Ibovespa - brapi (esperado: pede token)
+          t brapi_ibov "https://brapi.dev/api/quote/%5EBVSP?range=5y&interval=1d"
+
+          # Yahoo via curl, para os grãos de Chicago e os demais
+          for s in %5EBVSP %5EGSPC ZS%3DF ZC%3DF CT%3DF; do
+            t "yahoo_$s" "https://query1.finance.yahoo.com/v8/finance/chart/$s?range=5y&interval=1d"
+          done
+
+          # Cepea - páginas dos indicadores e série do boi
+          for p in boi-gordo soja milho algodao; do
+            t "cepea_$p" "https://www.cepea.org.br/br/indicador/$p.aspx"
+            echo "--- links de séries em cepea_$p:"
+            grep -o -E 'series/[a-z-]+\.aspx\?id=[0-9]+' "out_cepea_$p" | sort -u | head
+            echo "--- menções a MT/Cuiabá/Primavera/Paranaguá/Campinas:"
+            grep -o -i -E '(cuiab[^<]{0,40}|primavera do leste|paranagu[^<]{0,30}|campinas[^<]{0,30}|mato grosso[^<]{0,30})' "out_cepea_$p" | sort -u | head
+          done
+          t cepea_serie_boi "https://www.cepea.org.br/br/indicador/series/boi-gordo.aspx?id=2"
+
+          # Conab - portal de informações e consulta de preços
+          t conab_portal "https://portaldeinformacoes.conab.gov.br/"
+          t conab_downloads "https://portaldeinformacoes.conab.gov.br/download-arquivos.html"
+          echo "--- arquivos listados:"
+          grep -o -i -E 'href="[^"]*\.(txt|csv|xlsx?|zip)"' out_conab_downloads 2>/dev/null | sort -u | head -40
+          t conab_precospaa "https://consultaweb.conab.gov.br/precospaa/home"
