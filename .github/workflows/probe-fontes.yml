@@ -8,13 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Testar fontes
-        shell: bash
+        shell: bash {0}
         run: |
           UA="Mozilla/5.0"
           t() {
             local nome="$1" url="$2"
             local info
-            info=$(curl -sS -L -m 60 -A "$UA" -o "out_$nome" -w "http %{http_code} | %{size_download}B | %{time_total}s | %{content_type}" "$url" 2>&1)
+            info=$(curl -sS -L -m 60 -A "$UA" -o "out_$nome" -w "http %{http_code} | %{size_download}B | %{time_total}s | %{content_type}" "$url" 2>&1; echo " | curl exit $?")
             echo "################ $nome"
             echo "$info"
             echo "--- início:"; head -c 300 "out_$nome" 2>/dev/null | tr '\r' ' '; echo
