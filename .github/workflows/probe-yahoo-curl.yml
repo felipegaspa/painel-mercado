@@ -1,0 +1,21 @@
+name: Teste Yahoo (curl)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: IP de saída do runner
+        run: curl -sS https://api.ipify.org; echo
+      - name: Mesmo comando curl que funcionou localmente
+        run: |
+          curl -sS -m 30 -A "Mozilla/5.0" \
+            -D headers.txt -o body.txt \
+            -w "http %{http_code} size %{size_download}\n" \
+            "https://query1.finance.yahoo.com/v8/finance/chart/%5EBVSP?range=5y&interval=1d"
+          echo "===== CABEÇALHOS ====="
+          cat headers.txt
+          echo "===== CORPO (primeiros 2000 bytes) ====="
+          head -c 2000 body.txt; echo
