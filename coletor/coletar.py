@@ -265,7 +265,9 @@ def coletar_imea(ident, nome, pagina, titulo, local, unidade, observacao):
     caminho = DADOS / "imea" / f"{ident}.json"
     atual = ler_json(caminho, {})
     serie = {r["data"]: r for r in atual.get("serie", [])}
-    serie[dia] = {"data": dia, "valor": valor, "variacao_pct": variacao, "coletado_em": agora(), "origem": "site Imea"}
+    existente = serie.get(dia)
+    if not (existente and existente["valor"] == valor and existente.get("variacao_pct") == variacao):
+        serie[dia] = {"data": dia, "valor": valor, "variacao_pct": variacao, "coletado_em": agora(), "origem": "site Imea"}
     return {
         "id": ident, "nome": nome, "local": local,
         "tipo": "media_estadual" if local == "Mato Grosso" else "cidade",
@@ -279,27 +281,35 @@ def coletar_imea(ident, nome, pagina, titulo, local, unidade, observacao):
 
 # ---------- orquestração ----------
 
+def sem_horario_de_coleta(obj):
+    """Compara dados ignorando só o horário da coleta, para não gerar commit sem dado novo."""
+    return {k: v for k, v in obj.items() if k != "coletado_em"}
+
+
 def rodar_fonte(nome_fonte, itens, coletar, status):
     bloqueio = None
     for item in itens:
         ident = item[0]
         chave = f"{nome_fonte}/{ident}"
         st = status.setdefault(chave, {})
-        st["ultima_tentativa"] = agora()
         if bloqueio:
             erro = f"não tentado: fonte bloqueada nesta execução ({bloqueio})"
         else:
             try:
-                gravar_json(DADOS / nome_fonte / f"{ident}.json", coletar(*item))
-                st.update(ok=True, erro=None, ultimo_sucesso=st["ultima_tentativa"], falhando_desde=None)
-                print(f"OK     {chave}")
+                novo = coletar(*item)
+                caminho = DADOS / nome_fonte / f"{ident}.json"
+                mudou = sem_horario_de_coleta(novo) != sem_horario_de_coleta(ler_json(caminho, {}))
+                if mudou:
+                    gravar_json(caminho, novo)
+                st.update(ok=True, erro=None, falhando_desde=None)
+                print(f"OK     {chave} ({'atualizado' if mudou else 'sem mudança'})")
                 continue
             except FonteBloqueada as e:
                 bloqueio = erro = f"BLOQUEADO: {e}"
             except Exception as e:  # noqa: BLE001 - cada indicador falha sozinho
                 erro = f"{type(e).__name__}: {e}"
         st.update(ok=False, erro=erro)
-        st["falhando_desde"] = st.get("falhando_desde") or st["ultima_tentativa"]
+        st["falhando_desde"] = st.get("falhando_desde") or agora()
         print(f"FALHA  {chave}: {erro}")
 
 
@@ -314,15 +324,35 @@ def resumo(status):
             f.write("## Coleta\n\n" + texto + "\n")
 
 
+FONTES = {
+    "yahoo": (YAHOO, coletar_yahoo),
+    "sgs": (SGS, coletar_sgs),
+    "imea": (IMEA, coletar_imea),
+}
+
+
 def main():
+    """Uso: coletar.py [yahoo] [sgs] [imea]  (sem argumentos, roda as três)."""
+    escolhidas = sys.argv[1:] or list(FONTES)
+    desconhecidas = [f for f in escolhidas if f not in FONTES]
+    if desconhecidas:
+        sys.exit(f"fonte desconhecida: {', '.join(desconhecidas)}")
     caminho_status = DADOS / "status.json"
-    status = ler_json(caminho_status, {}).get("indicadores", {})
-    rodar_fonte("yahoo", YAHOO, coletar_yahoo, status)
-    rodar_fonte("sgs", SGS, coletar_sgs, status)
-    rodar_fonte("imea", IMEA, coletar_imea, status)
-    gravar_json(caminho_status, {"gerado_em": agora(), "indicadores": status}, compacto=False)
+    antigo = ler_json(caminho_status, {})
+    # O status guarda só o que muda quando a situação muda (nada de horário de tentativa).
+    status = {
+        chave: {c: st.get(c) for c in ("ok", "erro", "falhando_desde")}
+        for chave, st in antigo.get("indicadores", {}).items()
+    }
+    for nome in escolhidas:
+        itens, coletar = FONTES[nome]
+        rodar_fonte(nome, itens, coletar, status)
+    novo = {"indicadores": status}
+    if novo != antigo:
+        gravar_json(caminho_status, novo, compacto=False)
     resumo(status)
-    if not all(st.get("ok") for st in status.values()):
+    # Só as fontes desta execução decidem se ela falhou; uma falha antiga de outra fonte não conta.
+    if not all(st["ok"] for chave, st in status.items() if chave.split("/")[0] in escolhidas):
         sys.exit(1)
 
 

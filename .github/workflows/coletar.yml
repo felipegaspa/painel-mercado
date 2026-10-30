@@ -2,6 +2,10 @@ name: Coletar dados
 
 on:
   workflow_dispatch:
+    inputs:
+      fontes:
+        description: "Fontes a coletar (yahoo, sgs, imea), separadas por espaço"
+        default: "yahoo sgs imea"
 
 permissions:
   contents: write
@@ -21,8 +25,10 @@ jobs:
       - name: Coletar
         id: coletar
         continue-on-error: true
-        run: python coletor/coletar.py
-      - name: Salvar dados no repositório
+        env:
+          FONTES: ${{ inputs.fontes || 'yahoo sgs imea' }}
+        run: python coletor/coletar.py $FONTES
+      - name: Salvar dados no repositório (só se algo mudou)
         if: always()
         run: |
           git config user.name "github-actions[bot]"
@@ -32,6 +38,7 @@ jobs:
             echo "Nada mudou."
           else
             git commit -m "Dados: $(TZ=America/Sao_Paulo date '+%d/%m/%Y %H:%M')"
+            git pull --rebase -q
             git push
           fi
       - name: Falhar se alguma fonte falhou
