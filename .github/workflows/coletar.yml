@@ -5,7 +5,7 @@ on:
     # Brasília é UTC-3 (sem horário de verão). Minutos 7 e 37 para fugir do pico de início de hora.
     - cron: "7 9 * * 1-5"        # 06:07 Brasília, dias úteis: todas as fontes (Yahoo, Banco Central, Imea)
     - cron: "7,37 13-20 * * 1-5" # 10:07 a 17:37 Brasília, a cada 30 min: só Yahoo
-    - cron: "7 21 * * 1-5"       # 18:07 Brasília: só Yahoo (último fechamento do dia)
+    - cron: "7 21 * * 1-5"       # 18:07 Brasília: Yahoo e Imea (2ª e última leitura do Imea no dia)
   workflow_dispatch:
     inputs:
       fontes:
@@ -31,7 +31,7 @@ jobs:
         id: coletar
         continue-on-error: true
         env:
-          FONTES: ${{ github.event_name == 'schedule' && (github.event.schedule == '7 9 * * 1-5' && 'yahoo sgs imea' || 'yahoo') || inputs.fontes || 'yahoo sgs imea' }}
+          FONTES: ${{ github.event_name == 'schedule' && (github.event.schedule == '7 9 * * 1-5' && 'yahoo sgs imea' || github.event.schedule == '7 21 * * 1-5' && 'yahoo imea' || 'yahoo') || inputs.fontes || 'yahoo sgs imea' }}
         run: python coletor/coletar.py $FONTES
       - name: Salvar dados no repositório (só se algo mudou)
         if: always()
