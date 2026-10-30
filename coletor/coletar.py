@@ -9,9 +9,11 @@ Regras:
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from datetime import date, datetime, timedelta
+from functools import lru_cache
 from html.parser import HTMLParser
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -49,6 +51,11 @@ IMEA = [
     ("milho_primavera", "Milho disponível", "indicador-milho", "DISPONÍVEL", "Primavera do Leste", "R$/sc", None),
     ("algodao_primavera", "Algodão pluma disponível", "indicador-algodao", "PLUMA DISPONÍVEL", "Primavera do Leste", "R$/@", None),
     ("boi_cuiaba", "Boi gordo à vista", "indicador-boi", "BOI GORDO À VISTA", "Cuiabá", "R$/@", "Boi comum, sem premiação China"),
+    # Médias de MT: séries separadas, nunca emendadas nas de cidade (linha "Mato Grosso" da mesma tabela)
+    ("soja_mt", "Soja disponível", "indicador-soja", "DISPONÍVEL", "Mato Grosso", "R$/sc", None),
+    ("milho_mt", "Milho disponível", "indicador-milho", "DISPONÍVEL", "Mato Grosso", "R$/sc", None),
+    ("algodao_mt", "Algodão pluma disponível", "indicador-algodao", "PLUMA DISPONÍVEL", "Mato Grosso", "R$/@", None),
+    ("boi_mt", "Boi gordo à vista", "indicador-boi", "BOI GORDO À VISTA", "Mato Grosso", "R$/@", "Boi comum, sem premiação China"),
 ]
 
 
@@ -194,12 +201,15 @@ class _Texto(HTMLParser):
 
 
 def chrome():
+    if os.environ.get("CHROME_BIN"):
+        return os.environ["CHROME_BIN"]
     for nome in ("google-chrome", "chromium", "chromium-browser"):
-        if subprocess.run(["which", nome], capture_output=True).returncode == 0:
+        if shutil.which(nome):
             return nome
     raise FalhaColeta("navegador headless não encontrado")
 
 
+@lru_cache(maxsize=None)  # cada página é aberta uma vez por execução, mesmo servindo várias séries
 def ler_pagina_imea(pagina):
     r = subprocess.run(
         [chrome(), "--headless=new", "--disable-gpu", "--no-sandbox", f"--user-agent={UA}",
@@ -215,7 +225,7 @@ def ler_pagina_imea(pagina):
         raise FalhaColeta(f"página vazia ou incompleta ({len(html)} bytes, título {titulo!r})")
     p = _Texto()
     p.feed(html)
-    return p.linhas
+    return tuple(p.linhas)
 
 
 def numero_br(s):
@@ -255,9 +265,11 @@ def coletar_imea(ident, nome, pagina, titulo, local, unidade, observacao):
     caminho = DADOS / "imea" / f"{ident}.json"
     atual = ler_json(caminho, {})
     serie = {r["data"]: r for r in atual.get("serie", [])}
-    serie[dia] = {"data": dia, "valor": valor, "variacao_pct": variacao, "coletado_em": agora()}
+    serie[dia] = {"data": dia, "valor": valor, "variacao_pct": variacao, "coletado_em": agora(), "origem": "site Imea"}
     return {
-        "id": ident, "nome": nome, "local": local, "unidade": unidade,
+        "id": ident, "nome": nome, "local": local,
+        "tipo": "media_estadual" if local == "Mato Grosso" else "cidade",
+        "unidade": unidade,
         "observacao": observacao,
         "fonte": "Imea — Instituto Mato-grossense de Economia Agropecuária",
         "coletado_em": agora(),
