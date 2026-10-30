@@ -1,0 +1,23 @@
+name: Teste Imea (navegador headless)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ler páginas do Imea como visitante
+        shell: bash {0}
+        run: |
+          google-chrome --version
+          for p in boi soja milho algodao; do
+            echo "################ indicador-$p"
+            google-chrome --headless=new --disable-gpu --no-sandbox --virtual-time-budget=15000 \
+              --dump-dom "https://www.imea.com.br/imea-site/indicador-$p" 2>/dev/null > p.html
+            echo "bytes $(wc -c < p.html) | title: $(grep -o -i '<title>[^<]*' p.html | head -1)"
+            echo "bloqueio: $(grep -o -i -E 'just a moment|captcha|cf-chl|access denied|forbidden' p.html | sort -u | tr '\n' ' ')"
+            sed -e 's/<script[^>]*>.*<\/script>//g' -e 's/<[^>]*>/\n/g' p.html | sed 's/^[ \t]*//' | grep -v '^$' > p.txt
+            grep -m1 -A2 -E '^(Cuiabá|Primavera do Leste)$' p.txt | tr '\n' '|'; echo
+            grep -m1 -A1 '^Data:' p.txt | tr '\n' '|'; echo
+          done
