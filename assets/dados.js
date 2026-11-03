@@ -112,6 +112,9 @@
 
   // ---- Resumo de um indicador -----------------------------------------
   const hojeBRT = (agora) => iso(agora - 3 * 3600000);
+  // Fuso do navegador (sem timeZone fixo): quem abre em Cuiabá vê a hora de Cuiabá.
+  const horaLocal = (t) => new Intl.DateTimeFormat('pt-BR', { hour: '2-digit', minute: '2-digit' }).format(t);
+  const diaLocal = (t) => { const d = new Date(t); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 
   function resumirSerie(raw, escala, ehYahoo, agora) {
     const s = pontos(raw, escala);
@@ -121,11 +124,13 @@
     if (ehYahoo && raw.atual && raw.atual.valor != null) {
       valor = raw.atual.valor * (escala || 1);
       const dAt = raw.atual.horario.slice(0, 10);
-      hora = raw.atual.horario.slice(11, 16);
+      // Hora mostrada no fuso do navegador (Cuiabá para o Gustavo); a lógica de datas segue em Brasília.
+      const tAt = Date.parse(raw.atual.horario);
+      hora = horaLocal(tAt);
       dataRef = dAt;
       // O último ponto do histórico é a barra do dia, ainda parcial: a base é o ponto anterior.
       prev = iso(ult[0]) >= dAt ? s[n - 2] : ult;
-      rotulo = dAt === hojeBRT(agora) ? 'cotação das ' + hora : 'cotação de ' + fmtDM(dAt) + ' às ' + hora;
+      rotulo = diaLocal(tAt) === diaLocal(agora) ? 'cotação das ' + hora : 'cotação de ' + fmtDM(diaLocal(tAt)) + ' às ' + hora;
     } else {
       rotulo = (ehYahoo ? 'fechamento de ' : 'dado de ') + fmtDM(dataRef);
     }

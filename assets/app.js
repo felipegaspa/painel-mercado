@@ -136,7 +136,8 @@
   }
 
   // ---------- Página ----------
-  const fmtHora = (t) => new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo', weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(t).replace(',', '');
+  // Fuso do navegador: em Cuiabá mostra a hora de Cuiabá, em Brasília a de Brasília.
+  const fmtHora = (t) => new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }).format(t).replace(',', '');
   function render() {
     const secoes = D.ORDEM.map((sid) => {
       const lista = inds.filter((i) => i.secao === sid);
