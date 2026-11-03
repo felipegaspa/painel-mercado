@@ -11,9 +11,9 @@
       "falhando_desde": null
     },
     "yahoo/nasdaq": {
-      "ok": true,
-      "erro": null,
-      "falhando_desde": null
+      "ok": false,
+      "erro": "FalhaColeta: falha simulada (teste)",
+      "falhando_desde": "2026-11-02T21:43:00-03:00"
     },
     "yahoo/brent": {
       "ok": true,
