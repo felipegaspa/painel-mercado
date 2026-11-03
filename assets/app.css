@@ -6,9 +6,10 @@
   --fam:"IBM Plex Sans",system-ui,sans-serif;
 }
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html { -webkit-text-size-adjust: 100%; color-scheme: dark; }
 body { margin: 0; background: var(--bg); color: var(--txt); font: 400 1rem/1.35 var(--fam); font-variant-numeric: tabular-nums; }
-button { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: inherit; cursor: pointer; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: inherit; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.carregando { color: var(--mut); padding: 24px 16px; text-align: center; }
 :focus-visible { outline: 2px solid var(--acc-t); outline-offset: 2px; }
 .wrap { max-width: 1320px; margin: 0 auto; padding: 0 16px 24px; }
 
@@ -30,7 +31,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .linha { display: grid; width: 100%; align-items: center; column-gap: 14px; padding: 8px 14px; min-height: 60px;
   grid-template-columns: minmax(150px, 1.2fr) minmax(190px, 1.3fr) 180px 84px minmax(110px, .9fr) minmax(210px, 1.3fr) 16px; }
 .ind:not(.cinza) .linha:hover { background: var(--surf2); }
-.nome { font-weight: 600; } .sub { color: var(--mut); font-size: .72rem; font-weight: 400; display: block; line-height: 1.25; }
+.nome { font-weight: 600; } .sub { color: var(--mut); font-size: .78rem; font-weight: 400; display: block; line-height: 1.25; }
 .c-valor { display: flex; flex-direction: column; align-items: flex-start; }
 .valor { font-size: 1.5rem; font-weight: 600; line-height: 1.05; letter-spacing: -.01em; white-space: nowrap; }
 .valor small { font-size: .8rem; font-weight: 400; color: var(--mut); margin-left: 6px; letter-spacing: 0; }
@@ -39,11 +40,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .v { font-weight: 600; white-space: nowrap; }
 .v.up, .v12 .up { color: var(--up); } .v.down, .v12 .down { color: var(--down); } .v.nd { color: var(--mut); }
 .v12 { color: var(--mut); white-space: nowrap; } .v12 b { font-weight: 600; }
-.u { display: block; color: var(--mut); font-size: .72rem; font-weight: 400; white-space: nowrap; }
-.c-data { color: var(--mut); font-size: .72rem; line-height: 1.25; display: flex; flex-wrap: wrap; column-gap: 8px; }
+.u { display: block; color: var(--mut); font-size: .78rem; font-weight: 400; white-space: nowrap; }
+.c-data { color: var(--mut); font-size: .78rem; line-height: 1.25; display: flex; flex-wrap: wrap; column-gap: 8px; }
 .aviso { color: var(--mut); border-left: 2px solid var(--mut); padding-left: 6px; }
 .seta { width: 10px; height: 10px; border-right: 2px solid var(--mut); border-bottom: 2px solid var(--mut); transform: rotate(-45deg); justify-self: end; }
-.cinza { opacity: .6; filter: grayscale(1); }
+.cinza { opacity: .78; filter: grayscale(1); }
 .cinza .linha { cursor: default; }
 .indisp { font-size: 1.05rem; font-weight: 600; }
 .rodape-pg { color: var(--mut); font-size: .75rem; padding: 10px 0 0; }
@@ -57,7 +58,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .sem-spark { color: var(--mut); font-size: .75rem; display: flex; align-items: center; height: 100%; border-bottom: 1px dashed var(--line); }
 
 /* ---------- Gráfico grande (janela por cima) ---------- */
-dialog.modal { width: min(880px, 96vw); max-height: 94vh; background: var(--bg); color: var(--txt); border: 1px solid var(--line); border-radius: var(--raio); padding: 16px; }
+dialog.modal { overscroll-behavior: contain; width: min(880px, 96vw); max-height: 94vh; background: var(--bg); color: var(--txt); border: 1px solid var(--line); border-radius: var(--raio); padding: 16px; }
 dialog.modal::backdrop { background: rgba(2, 6, 16, .7); }
 .modal-cab { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
 .modal-cab h3 { margin: 0; font-size: 1.2rem; }
@@ -65,11 +66,13 @@ dialog.modal::backdrop { background: rgba(2, 6, 16, .7); }
 .g-per { display: flex; gap: 4px; }
 .g-per button { min-width: 44px; min-height: 36px; border: 1px solid var(--line); border-radius: var(--raio); padding: 0 10px; color: var(--mut); font-weight: 600; text-align: center; }
 .g-per button[aria-pressed="true"] { background: var(--acc); border-color: var(--acc); color: #fff; }
+.g-per button:not(:disabled):hover { border-color: var(--acc-t); color: var(--txt); }
 .g-per button:disabled { opacity: .4; cursor: not-allowed; border-style: dashed; }
 .g-leg { display: flex; gap: 14px; flex-wrap: wrap; font-size: .85rem; }
 .g-leg span::before { content: ""; display: inline-block; width: 18px; border-top: 3px solid var(--cor); margin-right: 6px; vertical-align: middle; }
 .g-leg span.tr::before { border-top-style: dashed; }
-.g-aviso { margin: 0 0 6px; color: var(--mut); font-size: .8rem; } .g-aviso:empty { display: none; }
+.g-aviso { margin: 0 0 6px; color: var(--mut); font-size: .85rem; }
+.g-aviso.ptax { color: var(--txt); border-left: 3px solid var(--acc-t); padding-left: 8px; } .g-aviso:empty { display: none; }
 .g-area { position: relative; height: min(320px, 46vh); }
 .g-hover { margin: 6px 0 0; min-height: 1.3em; color: var(--mut); font-size: .85rem; }
 .g-vazio { color: var(--mut); padding: 24px 0; }
@@ -94,7 +97,7 @@ dialog.modal::backdrop { background: rgba(2, 6, 16, .7); }
   .media { font-size: clamp(.75rem, 1.4vh, .95rem); }
   .v { font-size: clamp(1rem, 1.9vh, 1.25rem); } .v12 { font-size: clamp(.95rem, 1.8vh, 1.2rem); }
   .spark { height: clamp(22px, 4.4vh, 56px); }
-  .rodape-pg { padding: clamp(4px, .8vh, 10px) 0 clamp(4px, .8vh, 10px); font-size: .72rem; }
+  .rodape-pg { padding: clamp(4px, .8vh, 10px) 0 clamp(4px, .8vh, 10px); font-size: .78rem; }
 }
 @media (min-width: 1600px) { .wrap { max-width: 1500px; } }
 @media (min-width: 700px) and (max-width: 1023px) {
@@ -117,5 +120,6 @@ dialog.modal::backdrop { background: rgba(2, 6, 16, .7); }
   .c-dia .u { display: block; white-space: normal; max-width: 15ch; margin-left: auto; }
   .spark { height: 28px; }
   .g-area { height: 260px; }
+  .btn, .g-per button { min-height: 44px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

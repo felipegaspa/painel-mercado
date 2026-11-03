@@ -98,9 +98,9 @@
     host.innerHTML = `<div class="g-barra"><div class="g-per" role="group" aria-label="Período">${chaves.map((k) =>
       `<button type="button" data-p="${k}" aria-pressed="false" ${per[k].ok ? '' : `disabled title="histórico desde ${D.fmtMA(per[k].desde)}"`}>${k}</button>`).join('')}</div>
       <div class="g-leg">${series.length > 1 ? series.map((s) => `<span style="--cor:${s.cor}" class="${s.tracejado ? 'tr' : ''}">${esc(s.nome)}</span>`).join('') : `<span style="--cor:${series[0].cor}">${esc(ptax ? series[0].nome : nomeCompleto(i))} · ${esc(i.unid)}</span>`}</div></div>
-      ${ptax ? '<p class="g-aviso">PTAX é a média das consultas do Banco Central no dia e pode diferir do fechamento do mercado.</p>' : ''}
+      ${ptax ? `<p class="g-aviso ptax">A linha deste gráfico é a <b>PTAX do Banco Central</b> (último dado ${D.fmtDM(i.bcRes.data)}: R$ ${D.fmtNum(i.bcRes.valor, 2)}), não a cotação do Yahoo da tela principal. A PTAX é a média das consultas do Banco Central no dia e pode diferir do preço do mercado.</p>` : ''}
       <p class="g-aviso">${indis.length ? indis.map((k) => `${k}: histórico desde ${D.fmtMA(per[k].desde)}`).join(' · ') : ''}</p>
-      <div class="g-area"></div><p class="g-hover"></p>`;
+      <div class="g-area" role="img"></div><p class="g-hover"></p>`;
     const area = host.querySelector('.g-area'), hov = host.querySelector('.g-hover');
     if (main.length < 2) {
       area.outerHTML = `<p class="g-vazio">Ainda sem histórico: só há ${main.length} leitura (${D.fmtDM(D.iso(main[0][0]))}). O gráfico aparece quando houver mais dias.</p>`;
@@ -115,6 +115,7 @@
     function aplicar(k) {
       host.querySelectorAll('[data-p]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.p === k)));
       graf.setDados(series, per[k].ini, per[k].fim);
+      area.setAttribute('aria-label', `Gráfico de ${series.map((s) => s.nome).join(' e ')}, período ${k}`);
     }
     host.querySelector('.g-per').addEventListener('click', (e) => { const b = e.target.closest('button[data-p]'); if (b && !b.disabled && graf) aplicar(b.dataset.p); });
     return () => { vivo = false; if (graf) graf.destruir(); host.innerHTML = ''; };
@@ -125,7 +126,7 @@
     const dlg = document.createElement('dialog');
     dlg.className = 'modal';
     dlg.setAttribute('aria-labelledby', 'mt');
-    dlg.innerHTML = `<div class="modal-cab"><div><h3 id="mt">${esc(nomeCompleto(i))}</h3><span class="sub">${esc(i.unid)}${i.obs ? ' · ' + esc(i.obs) : ''} · ${esc(i.rotulo)}</span></div><button class="btn" type="button" data-x>Fechar</button></div><div class="mg"></div>`;
+    dlg.innerHTML = `<div class="modal-cab"><div><h3 id="mt">${esc(nomeCompleto(i))}${i.sGrande ? ' · PTAX do Banco Central' : ''}</h3><span class="sub">${i.sGrande ? 'Dólar (venda), em reais' : `${esc(i.unid)}${i.obs ? ' · ' + esc(i.obs) : ''} · ${esc(i.rotulo)}`}</span></div><button class="btn" type="button" data-x>Fechar</button></div><div class="mg"></div>`;
     document.body.appendChild(dlg);
     const destruir = montarGrande(dlg.querySelector('.mg'), i);
     dlg.addEventListener('close', () => { destruir(); dlg.remove(); });
@@ -142,7 +143,7 @@
       return `<section class="secao" style="--n:${lista.length}" aria-labelledby="h-${sid}"><div class="secao-cab"><h2 id="h-${sid}">${D.SECOES[sid].titulo}</h2><span class="fonte">Fonte: ${D.SECOES[sid].fonte}</span></div><div class="lista">${lista.map(linha).join('')}</div></section>`;
     }).join('');
     app.innerHTML = `<div class="wrap">
-      <header class="topo"><h1>Olá, Gustavo</h1><div class="meta"><span>Última cotação: ${fmtHora(ultima)}</span><button class="btn" type="button" id="atualizar">Atualizar</button><span id="quando">${atualizadoEm ? 'atualizado às ' + atualizadoEm : ''}</span></div></header>
+      <header class="topo"><h1>Olá, Gustavo</h1><div class="meta"><span>Última cotação: ${fmtHora(ultima)}</span><button class="btn" type="button" id="atualizar">Atualizar</button><span id="quando" role="status">${atualizadoEm ? 'atualizado às ' + atualizadoEm : ''}</span></div></header>
       ${velha ? `<div class="faixa-velha" role="status">Dados desatualizados desde ${D.fmtDM(velha.desde)}</div>` : ''}
       <main class="secoes">${secoes}</main>
       <footer class="rodape-pg">Fontes: Yahoo Finance · Banco Central do Brasil (PTAX) · Imea</footer>
