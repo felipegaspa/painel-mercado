@@ -1,0 +1,16 @@
+name: Testes
+on:
+  push:
+    branches: [main]
+    paths: ["coletor/**", ".github/workflows/testes.yml"]
+permissions:
+  contents: read
+jobs:
+  vigia:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: cd coletor && python teste_vigia.py

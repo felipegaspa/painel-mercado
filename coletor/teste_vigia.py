@@ -3,9 +3,10 @@ from datetime import datetime
 from vigia import avaliar, TZ
 
 
-def r(i, inicio_brt, concl="success", branch="main"):
+def r(i, inicio_brt, concl="success", branch="main", script=False):
     t = datetime.fromisoformat(inicio_brt + "-03:00").astimezone(TZ).isoformat()
-    return {"id": i, "created_at": t, "run_started_at": t, "conclusion": concl, "head_branch": branch}
+    return {"id": i, "created_at": t, "run_started_at": t, "conclusion": concl, "head_branch": branch,
+            "display_title": "Coletar dados · Apps Script" if script else "Coletar dados"}
 
 
 def a(agora_brt):
@@ -27,6 +28,9 @@ casos = [
     ("2ª rodada depois das 08:30 não repete o aviso", "2026-11-04T10:07", [r(1, "2026-11-04T09:37", "failure")], True),
     ("segunda-feira olha a sexta às 17h", "2026-11-09T09:00", [r(1, "2026-11-06T18:07")], True),
     ("segunda-feira sem nada desde sexta 13h: ALERTA", "2026-11-09T09:00", [r(1, "2026-11-06T13:07")], False),
+    ("script ativo e rodou às 06:12: ok", "2026-11-04T09:00", [r(1, "2026-11-03T15:12", script=True), r(2, "2026-11-04T06:12", script=True)], True),
+    ("script ativo mas só a reserva rodou: ALERTA do script", "2026-11-04T09:00", [r(1, "2026-11-03T15:12", script=True), r(2, "2026-11-04T06:19")], False),
+    ("script nunca usado: não exige", "2026-11-04T09:00", [r(2, "2026-11-04T06:19")], True),
     ("a própria rodada não conta", "2026-11-04T09:00", [r(99, "2026-11-04T08:00")], False),
 ]
 erros = 0

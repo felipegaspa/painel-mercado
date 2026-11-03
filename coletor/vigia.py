@@ -3,9 +3,11 @@
 Roda no fim de cada rodada do robô. Em dia útil, a partir das 08:30 de Brasília, confere na API do GitHub
 se alguma rodada do robô terminou (com sucesso ou falha) entre 17:00 do dia útil anterior e 08:30 de hoje.
 Se nenhuma terminou, sai com erro: a execução fica vermelha e o GitHub manda o e-mail "Run failed".
+Também avisa se o disparador do Google (Apps Script, título "Coletar dados · Apps Script") parou: se ele disparou
+nos últimos dias, tem de ter disparado na janela.
 Avisa uma vez por dia: só a primeira rodada depois das 08:30 confere; as seguintes veem que ela já existe.
 
-Limite conhecido: se o GitHub não entregar NENHUMA rodada, nada roda e nada avisa (ver SPEC, 4.5).
+Se nem o GitHub nem o script rodarem, quem avisa é o próprio Apps Script ou o e-mail de erro do Google (SPEC 4.6).
 Usa só o GITHUB_TOKEN da própria execução (permissão actions: read), nada fora do GitHub.
 """
 import json
@@ -55,21 +57,28 @@ def avaliar(agora, rodadas, esta):
     prazo = datetime.combine(agora.date(), PRAZO, TZ)
     inicio = datetime.combine(dia_util_anterior(agora.date()), INICIO, TZ)
     outras = [r for r in rodadas if r["id"] != esta]
+    # Só a 1ª rodada depois das 08:30 confere; as seguintes não repetem o aviso.
+    if any(prazo <= quando(r["created_at"]) < agora for r in outras):
+        return True, "já conferido hoje por uma rodada anterior (depois das 08:30)"
     na_janela = [r for r in outras
                  if r.get("conclusion") in ("success", "failure") and r.get("head_branch") == "main"
                  and inicio <= quando(r["run_started_at"]) <= prazo]
-    if na_janela:
-        r = max(na_janela, key=lambda r: r["run_started_at"])
-        return True, f"ok: rodada às {quando(r['run_started_at']):%d/%m %H:%M} (Brasília) atualizou o painel antes das 08:30"
-    ja_conferida = [r for r in outras if prazo <= quando(r["created_at"]) < agora]
-    if ja_conferida:
-        return True, "painel não foi atualizado antes das 08:30, mas uma rodada anterior de hoje já avisou"
-    anteriores = [r for r in outras if quando(r["created_at"]) < inicio]
-    ultima = (f"a última foi às {quando(max(anteriores, key=lambda r: r['created_at'])['created_at']):%d/%m %H:%M}"
-              if anteriores else "nenhuma desde a véspera")
-    return False, (f"NENHUMA rodada do robô entre {inicio:%d/%m %H:%M} e {prazo:%d/%m %H:%M} (Brasília); {ultima}. "
-                   f"O GitHub não entregou os disparos agendados: às 07:30 de Cuiabá o painel estava com o dado de antes. "
-                   f"Esta rodada já atualizou os dados agora.")
+    if not na_janela:
+        anteriores = [r for r in outras if quando(r["created_at"]) < inicio]
+        ultima = (f"a última foi às {quando(max(anteriores, key=lambda r: r['created_at'])['created_at']):%d/%m %H:%M}"
+                  if anteriores else "nenhuma desde a véspera")
+        return False, (f"NENHUMA rodada do robô entre {inicio:%d/%m %H:%M} e {prazo:%d/%m %H:%M} (Brasília); {ultima}. "
+                       f"Nem o disparador do Google nem o agendamento do GitHub rodaram: às 07:30 de Cuiabá o painel "
+                       f"estava com o dado de antes. Esta rodada já atualizou os dados agora.")
+    # Disparador do Google: se ele já disparou nos últimos dias, tem de ter disparado nesta janela também.
+    def do_script(r):
+        return "Apps Script" in (r.get("display_title") or "")
+    if any(do_script(r) for r in outras) and not any(do_script(r) for r in na_janela):
+        return False, (f"O disparador do Google (Apps Script) não rodou entre {inicio:%d/%m %H:%M} e {prazo:%d/%m %H:%M} "
+                       f"(Brasília). O painel foi atualizado pela reserva do GitHub, mas confira o script: token vencido, "
+                       f"gatilho apagado ou erro (veja Execuções no Apps Script).")
+    r = max(na_janela, key=lambda r: r["run_started_at"])
+    return True, f"ok: rodada às {quando(r['run_started_at']):%d/%m %H:%M} (Brasília) atualizou o painel antes das 08:30"
 
 
 def main():
