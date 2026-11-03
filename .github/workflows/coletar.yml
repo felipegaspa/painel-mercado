@@ -3,14 +3,18 @@ name: Coletar dados
 on:
   schedule:
     # Brasília é UTC-3 (sem horário de verão). Minutos 7 e 37 para fugir do pico de início de hora.
-    - cron: "7 9 * * 1-5"        # 06:07 Brasília, dias úteis: todas as fontes (Yahoo, Banco Central, Imea)
-    - cron: "7,37 13-20 * * 1-5" # 10:07 a 17:37 Brasília, a cada 30 min: só Yahoo
-    - cron: "7 21 * * 1-5"       # 18:07 Brasília: Yahoo e Imea (2ª e última leitura do Imea no dia)
+    # O GitHub atrasa e descarta disparos agendados; por isso cada rodada decide pelo estado o que falta
+    # (coletar.py auto): Yahoo e Banco Central sempre; Imea no máximo 2 vezes por dia, a 2ª a partir das 17h.
+    - cron: "7 9 * * 1-5"        # 06:07 Brasília, dias úteis
+    - cron: "7,37 13-22 * * 1-5" # 10:07 a 19:37 Brasília, a cada 30 min
   workflow_dispatch:
     inputs:
       fontes:
-        description: "Fontes a coletar (yahoo, sgs, imea), separadas por espaço"
-        default: "yahoo sgs imea"
+        description: "auto (decide pelo estado) ou fontes separadas por espaço (yahoo sgs imea)"
+        default: "auto"
+      agora:
+        description: "Só para teste: simula o relógio (ex. 2026-11-03T07:00-03:00)"
+        default: ""
 
 permissions:
   contents: write
@@ -31,7 +35,8 @@ jobs:
         id: coletar
         continue-on-error: true
         env:
-          FONTES: ${{ github.event_name == 'schedule' && (github.event.schedule == '7 9 * * 1-5' && 'yahoo sgs imea' || github.event.schedule == '7 21 * * 1-5' && 'yahoo imea' || 'yahoo') || inputs.fontes || 'yahoo sgs imea' }}
+          FONTES: ${{ inputs.fontes || 'auto' }}
+          COLETA_AGORA: ${{ inputs.agora }}
         run: python coletor/coletar.py $FONTES
       - name: Salvar dados no repositório (só se algo mudou)
         if: always()

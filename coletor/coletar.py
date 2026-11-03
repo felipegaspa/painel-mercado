@@ -5,6 +5,9 @@ Regras:
   então uma falha nunca sobrescreve o último dado bom.
 - HTTP 403/429 ou página de desafio = fonte bloqueada: paramos aquela fonte e reportamos, sem contornar.
 - O estado de cada indicador (último sucesso, falhando desde, erro) fica em data/status.json.
+- Modo "auto" (o das execuções agendadas): a rodada decide o que fazer pelo estado, não pelo horário do cron,
+  porque o GitHub atrasa e descarta disparos agendados. Yahoo e Banco Central em toda rodada (refazem o
+  histórico inteiro); Imea no máximo 2 leituras por dia (ver imea_devida), registradas em data/imea/leituras.json.
 """
 import json
 import os
@@ -27,34 +30,26 @@ MARCAS_DESAFIO = re.compile(r"just a moment|cf-chl|captcha|access denied|too man
 # id, nome, ticker, unidade
 YAHOO = [
     ("dolar", "Dólar", "USDBRL=X", "R$"),
-    ("euro", "Euro", "EURBRL=X", "R$"),
     ("ibovespa", "Ibovespa", "^BVSP", "pontos"),
-    ("sp500", "S&P 500", "^GSPC", "pontos"),
     ("nasdaq", "Nasdaq", "^IXIC", "pontos"),
-    ("dow", "Dow Jones", "^DJI", "pontos"),
     ("brent", "Petróleo Brent", "BZ=F", "US$/barril"),
-    ("wti", "Petróleo WTI", "CL=F", "US$/barril"),
     ("soja_cbot", "Soja (Chicago)", "ZS=F", "US¢/bushel"),
     ("milho_cbot", "Milho (Chicago)", "ZC=F", "US¢/bushel"),
-    ("algodao_ice", "Algodão (ICE Nova York)", "CT=F", "US¢/libra"),
 ]
 
 # id, nome, código SGS
 SGS = [
     ("dolar", "Dólar (venda) — Banco Central", 1),
-    ("euro", "Euro (venda) — Banco Central", 21619),
 ]
 
 # id, nome, página, título da tabela, local, unidade, observação obrigatória no rodapé
 IMEA = [
     ("soja_primavera", "Soja disponível", "indicador-soja", "DISPONÍVEL", "Primavera do Leste", "R$/sc", None),
     ("milho_primavera", "Milho disponível", "indicador-milho", "DISPONÍVEL", "Primavera do Leste", "R$/sc", None),
-    ("algodao_primavera", "Algodão pluma disponível", "indicador-algodao", "PLUMA DISPONÍVEL", "Primavera do Leste", "R$/@", None),
     ("boi_cuiaba", "Boi gordo à vista", "indicador-boi", "BOI GORDO À VISTA", "Cuiabá", "R$/@", "Boi comum, sem premiação China"),
     # Médias de MT: séries separadas, nunca emendadas nas de cidade (linha "Mato Grosso" da mesma tabela)
     ("soja_mt", "Soja disponível", "indicador-soja", "DISPONÍVEL", "Mato Grosso", "R$/sc", None),
     ("milho_mt", "Milho disponível", "indicador-milho", "DISPONÍVEL", "Mato Grosso", "R$/sc", None),
-    ("algodao_mt", "Algodão pluma disponível", "indicador-algodao", "PLUMA DISPONÍVEL", "Mato Grosso", "R$/@", None),
     ("boi_mt", "Boi gordo à vista", "indicador-boi", "BOI GORDO À VISTA", "Mato Grosso", "R$/@", "Boi comum, sem premiação China"),
 ]
 
@@ -67,8 +62,14 @@ class FalhaColeta(Exception):
     pass
 
 
+def relogio():
+    """Hora de Brasília. COLETA_AGORA (ISO, ex. 2026-11-03T07:00-03:00) simula o relógio — só para teste."""
+    simulado = os.environ.get("COLETA_AGORA")
+    return datetime.fromisoformat(simulado).astimezone(TZ) if simulado else datetime.now(TZ)
+
+
 def agora():
-    return datetime.now(TZ).isoformat(timespec="seconds")
+    return relogio().isoformat(timespec="seconds")
 
 
 def ler_json(caminho, padrao):
@@ -324,6 +325,36 @@ def resumo(status):
             f.write("## Coleta\n\n" + texto + "\n")
 
 
+# ---------- decisão por estado (modo auto) ----------
+
+LEITURAS_IMEA = DADOS / "imea" / "leituras.json"
+TARDE = 17  # a partir das 17h a 2ª leitura do dia pega a publicação da tarde do Imea
+
+
+def imea_devida(momento, leituras):
+    """No máximo 2 leituras por dia: a 1ª na primeira rodada que chegar; a 2ª só a partir das 17h,
+    e só se a 1ª foi antes das 17h (se a 1ª já foi à tarde, ela já pegou a publicação da tarde)."""
+    hoje = [datetime.fromisoformat(t) for t in leituras if t[:10] == momento.date().isoformat()]
+    if not hoje:
+        return True
+    return len(hoje) == 1 and momento.hour >= TARDE and hoje[0].hour < TARDE
+
+
+def registrar_leitura_imea(momento):
+    """Guarda só as leituras de hoje e de ontem (o suficiente para decidir)."""
+    ontem = (momento.date() - timedelta(days=1)).isoformat()
+    antigas = ler_json(LEITURAS_IMEA, {}).get("leituras", [])
+    leituras = [t for t in antigas if t[:10] >= ontem] + [momento.isoformat(timespec="seconds")]
+    gravar_json(LEITURAS_IMEA, {"leituras": leituras}, compacto=False)
+
+
+def decidir(momento):
+    fontes = ["yahoo", "sgs"]
+    if imea_devida(momento, ler_json(LEITURAS_IMEA, {}).get("leituras", [])):
+        fontes.append("imea")
+    return fontes
+
+
 FONTES = {
     "yahoo": (YAHOO, coletar_yahoo),
     "sgs": (SGS, coletar_sgs),
@@ -332,20 +363,27 @@ FONTES = {
 
 
 def main():
-    """Uso: coletar.py [yahoo] [sgs] [imea]  (sem argumentos, roda as três)."""
-    escolhidas = sys.argv[1:] or list(FONTES)
+    """Uso: coletar.py auto  |  coletar.py [yahoo] [sgs] [imea]  (sem argumentos = auto)."""
+    momento = relogio()
+    pedidas = sys.argv[1:] or ["auto"]
+    escolhidas = decidir(momento) if pedidas == ["auto"] else pedidas
+    print(f"Rodada de {momento:%d/%m/%Y %H:%M} ({'auto' if pedidas == ['auto'] else 'manual'}): {' '.join(escolhidas)}")
     desconhecidas = [f for f in escolhidas if f not in FONTES]
     if desconhecidas:
         sys.exit(f"fonte desconhecida: {', '.join(desconhecidas)}")
     caminho_status = DADOS / "status.json"
     antigo = ler_json(caminho_status, {})
     # O status guarda só o que muda quando a situação muda (nada de horário de tentativa).
+    # Só ficam no status os indicadores que ainda são coletados (os descartados saem sozinhos).
+    conhecidas = {f"{nome}/{item[0]}" for nome, (itens, _) in FONTES.items() for item in itens}
     status = {
         chave: {c: st.get(c) for c in ("ok", "erro", "falhando_desde")}
-        for chave, st in antigo.get("indicadores", {}).items()
+        for chave, st in antigo.get("indicadores", {}).items() if chave in conhecidas
     }
     for nome in escolhidas:
         itens, coletar = FONTES[nome]
+        if nome == "imea":
+            registrar_leitura_imea(momento)  # conta a tentativa, mesmo se falhar: o limite é de carga no site
         rodar_fonte(nome, itens, coletar, status)
     novo = {"indicadores": status}
     if novo != antigo:
