@@ -124,7 +124,7 @@
     if (ehYahoo && raw.atual && raw.atual.valor != null) {
       valor = raw.atual.valor * (escala || 1);
       const dAt = raw.atual.horario.slice(0, 10);
-      // Hora mostrada no fuso do navegador (Cuiabá para o Gustavo); a lógica de datas segue em Brasília.
+      // Hora mostrada no fuso do navegador de quem abre; a lógica de datas segue em Brasília.
       const tAt = Date.parse(raw.atual.horario);
       hora = horaLocal(tAt);
       dataRef = dAt;

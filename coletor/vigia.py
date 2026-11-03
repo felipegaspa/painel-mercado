@@ -1,4 +1,4 @@
-"""Vigia: o painel estava atualizado quando o Gustavo abre (07:30 de Cuiabá = 08:30 de Brasília)?
+"""Vigia: o painel estava atualizado no horário de leitura (07:30 de Cuiabá = 08:30 de Brasília)?
 
 Roda no fim de cada rodada do robô. Em dia útil, a partir das 08:30 de Brasília, confere na API do GitHub
 se alguma rodada do robô terminou (com sucesso ou falha) entre 17:00 do dia útil anterior e 08:30 de hoje.
