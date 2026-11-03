@@ -297,6 +297,9 @@ def rodar_fonte(nome_fonte, itens, coletar, status):
             erro = f"não tentado: fonte bloqueada nesta execução ({bloqueio})"
         else:
             try:
+                # COLETA_FALHA (ex. "yahoo/nasdaq") simula a falha de uma série — só para teste; o dado bom fica intacto
+                if chave in os.environ.get("COLETA_FALHA", "").split(","):
+                    raise FalhaColeta("falha simulada (teste)")
                 novo = coletar(*item)
                 caminho = DADOS / nome_fonte / f"{ident}.json"
                 mudou = sem_horario_de_coleta(novo) != sem_horario_de_coleta(ler_json(caminho, {}))

@@ -1,0 +1,121 @@
+/* Painel de mercado — visual "Marinho" (V01). No PC tudo cabe numa tela, sem rolar: as seções dividem a
+   altura da janela na proporção do número de linhas, e fontes e espaços crescem com a altura (vh). */
+:root {
+  --bg:#0A1226; --surf:#111B36; --surf2:#172447; --line:#22325F; --txt:#EAF0FF; --mut:#93A3C7;
+  --acc:#2F5FE3; --acc-t:#8FAEFF; --c2:#9FB2D9; --up:#34D399; --down:#FB7185; --raio:14px;
+  --fam:"IBM Plex Sans",system-ui,sans-serif;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--txt); font: 400 1rem/1.35 var(--fam); font-variant-numeric: tabular-nums; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; text-align: inherit; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--acc-t); outline-offset: 2px; }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 0 16px 24px; }
+
+/* ---------- Topo ---------- */
+.topo { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 18px 0 10px; }
+.topo h1 { margin: 0; font-size: 1.6rem; font-weight: 700; letter-spacing: -.01em; }
+.topo .meta { color: var(--mut); font-size: .875rem; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); border-radius: var(--raio); padding: 6px 12px; background: var(--surf2); font-size: .875rem; min-height: 36px; }
+.btn:hover { border-color: var(--acc-t); }
+.faixa-velha { background: #3A1D25; border: 1px solid #7A2E3E; color: #FFD5DB; border-radius: var(--raio); padding: 8px 14px; margin-bottom: 8px; font-weight: 600; }
+
+/* ---------- Seções e linhas ---------- */
+.secao { margin-top: 16px; }
+.secao-cab { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+.secao-cab h2 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+.secao-cab .fonte { color: var(--mut); font-size: .78rem; }
+.lista { border: 1px solid var(--line); border-radius: var(--raio); background: var(--surf); overflow: hidden; }
+.ind + .ind { border-top: 1px solid var(--line); }
+.linha { display: grid; width: 100%; align-items: center; column-gap: 14px; padding: 8px 14px; min-height: 60px;
+  grid-template-columns: minmax(150px, 1.2fr) minmax(190px, 1.3fr) 180px 84px minmax(110px, .9fr) minmax(210px, 1.3fr) 16px; }
+.ind:not(.cinza) .linha:hover { background: var(--surf2); }
+.nome { font-weight: 600; } .sub { color: var(--mut); font-size: .72rem; font-weight: 400; display: block; line-height: 1.25; }
+.c-valor { display: flex; flex-direction: column; align-items: flex-start; }
+.valor { font-size: 1.5rem; font-weight: 600; line-height: 1.05; letter-spacing: -.01em; white-space: nowrap; }
+.valor small { font-size: .8rem; font-weight: 400; color: var(--mut); margin-left: 6px; letter-spacing: 0; }
+.media { color: var(--mut); font-size: .8rem; } .media b { color: var(--txt); font-weight: 600; }
+.c-dia, .c-12 { text-align: right; }
+.v { font-weight: 600; white-space: nowrap; }
+.v.up, .v12 .up { color: var(--up); } .v.down, .v12 .down { color: var(--down); } .v.nd { color: var(--mut); }
+.v12 { color: var(--mut); white-space: nowrap; } .v12 b { font-weight: 600; }
+.u { display: block; color: var(--mut); font-size: .72rem; font-weight: 400; white-space: nowrap; }
+.c-data { color: var(--mut); font-size: .72rem; line-height: 1.25; display: flex; flex-wrap: wrap; column-gap: 8px; }
+.aviso { color: var(--mut); border-left: 2px solid var(--mut); padding-left: 6px; }
+.seta { width: 10px; height: 10px; border-right: 2px solid var(--mut); border-bottom: 2px solid var(--mut); transform: rotate(-45deg); justify-self: end; }
+.cinza { opacity: .6; filter: grayscale(1); }
+.cinza .linha { cursor: default; }
+.indisp { font-size: 1.05rem; font-weight: 600; }
+.rodape-pg { color: var(--mut); font-size: .75rem; padding: 10px 0 0; }
+
+/* ---------- Mini-gráfico (área) ---------- */
+.spark { position: relative; display: block; height: 36px; min-width: 60px; }
+.spark svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.spark path.l { fill: none; stroke: var(--acc-t); stroke-width: 1.6; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.spark path.a { fill: var(--acc); opacity: .28; stroke: none; }
+.spark i { position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%; background: var(--acc-t); box-shadow: 0 0 0 3px var(--bg); }
+.sem-spark { color: var(--mut); font-size: .75rem; display: flex; align-items: center; height: 100%; border-bottom: 1px dashed var(--line); }
+
+/* ---------- Gráfico grande (janela por cima) ---------- */
+dialog.modal { width: min(880px, 96vw); max-height: 94vh; background: var(--bg); color: var(--txt); border: 1px solid var(--line); border-radius: var(--raio); padding: 16px; }
+dialog.modal::backdrop { background: rgba(2, 6, 16, .7); }
+.modal-cab { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.modal-cab h3 { margin: 0; font-size: 1.2rem; }
+.g-barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 8px 0; }
+.g-per { display: flex; gap: 4px; }
+.g-per button { min-width: 44px; min-height: 36px; border: 1px solid var(--line); border-radius: var(--raio); padding: 0 10px; color: var(--mut); font-weight: 600; text-align: center; }
+.g-per button[aria-pressed="true"] { background: var(--acc); border-color: var(--acc); color: #fff; }
+.g-per button:disabled { opacity: .4; cursor: not-allowed; border-style: dashed; }
+.g-leg { display: flex; gap: 14px; flex-wrap: wrap; font-size: .85rem; }
+.g-leg span::before { content: ""; display: inline-block; width: 18px; border-top: 3px solid var(--cor); margin-right: 6px; vertical-align: middle; }
+.g-leg span.tr::before { border-top-style: dashed; }
+.g-aviso { margin: 0 0 6px; color: var(--mut); font-size: .8rem; } .g-aviso:empty { display: none; }
+.g-area { position: relative; height: min(320px, 46vh); }
+.g-hover { margin: 6px 0 0; min-height: 1.3em; color: var(--mut); font-size: .85rem; }
+.g-vazio { color: var(--mut); padding: 24px 0; }
+
+/* ---------- PC: uma tela só ---------- */
+@media (min-width: 700px) {
+  :root { --cab: clamp(20px, 3.2vh, 34px); --gap: clamp(4px, 1vh, 14px); }
+  .wrap { height: 100dvh; display: flex; flex-direction: column; padding-bottom: 0; }
+  .topo { padding: clamp(6px, 1.4vh, 18px) 0 clamp(4px, .8vh, 10px); }
+  .topo h1 { font-size: clamp(1.25rem, 2.6vh, 1.8rem); }
+  .faixa-velha { padding: 3px 12px; margin-bottom: 4px; font-size: .85rem; }
+  .secoes { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: var(--gap); }
+  /* cada seção ganha altura na proporção das suas linhas; o cabeçalho tem altura fixa */
+  .secao { margin: 0; flex: var(--n) 1 var(--cab); min-height: 0; display: flex; flex-direction: column; }
+  .secao-cab { flex: none; height: var(--cab); align-items: flex-end; margin: 0; padding-bottom: 2px; }
+  .secao-cab h2 { font-size: clamp(.95rem, 2vh, 1.25rem); }
+  .lista { flex: 1; min-height: 0; display: grid; grid-auto-rows: minmax(0, 1fr); }
+  .ind { min-height: 0; display: flex; }
+  .linha { min-height: 0; padding: 0 14px; }
+  .nome { font-size: clamp(1rem, 1.9vh, 1.2rem); }
+  .valor { font-size: clamp(1.2rem, 3.2vh, 2.2rem); }
+  .media { font-size: clamp(.75rem, 1.4vh, .95rem); }
+  .v { font-size: clamp(1rem, 1.9vh, 1.25rem); } .v12 { font-size: clamp(.95rem, 1.8vh, 1.2rem); }
+  .spark { height: clamp(22px, 4.4vh, 56px); }
+  .rodape-pg { padding: clamp(4px, .8vh, 10px) 0 clamp(4px, .8vh, 10px); font-size: .72rem; }
+}
+@media (min-width: 1600px) { .wrap { max-width: 1500px; } }
+@media (min-width: 700px) and (max-width: 1023px) {
+  .linha { grid-template-columns: minmax(110px, 1fr) minmax(150px, 1.2fr) 150px 72px minmax(60px, .7fr) 16px; }
+  .c-data { display: none; }
+}
+
+/* ---------- Celular: pode rolar ---------- */
+@media (max-width: 699px) {
+  .wrap { padding: 0 12px 28px; }
+  .topo { padding: 14px 0 8px; } .topo h1 { font-size: 1.35rem; }
+  .secao { margin-top: 14px; }
+  .linha { min-height: 0; padding: 10px 12px; row-gap: 2px; column-gap: 10px;
+    grid-template-columns: minmax(0, 1fr) auto 14px;
+    grid-template-areas: "nome valor seta" "spark dia seta" "data m12 seta"; }
+  .c-nome { grid-area: nome; } .c-valor { grid-area: valor; align-items: flex-end; } .c-spark { grid-area: spark; }
+  .c-dia { grid-area: dia; } .c-12 { grid-area: m12; } .c-data { grid-area: data; } .seta { grid-area: seta; }
+  .valor { font-size: 1.35rem; }
+  .u { display: inline; margin-left: 4px; }
+  .c-dia .u { display: block; white-space: normal; max-width: 15ch; margin-left: auto; }
+  .spark { height: 28px; }
+  .g-area { height: 260px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
