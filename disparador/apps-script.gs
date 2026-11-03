@@ -1,5 +1,5 @@
 /**
- * Disparador do painel-mercado — Google Apps Script na conta Google do Felipe.
+ * Disparador do painel-mercado — Google Apps Script.
  *
  * De hora em hora, nos dias úteis, das 05h às 20h de Brasília, chama o workflow "Coletar dados"
  * (workflow_dispatch na main). O robô decide pelo estado o que coletar (Imea no máximo 2 leituras por dia).
