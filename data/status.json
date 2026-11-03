@@ -5,17 +5,7 @@
       "erro": null,
       "falhando_desde": null
     },
-    "yahoo/euro": {
-      "ok": true,
-      "erro": null,
-      "falhando_desde": null
-    },
     "yahoo/ibovespa": {
-      "ok": true,
-      "erro": null,
-      "falhando_desde": null
-    },
-    "yahoo/sp500": {
       "ok": true,
       "erro": null,
       "falhando_desde": null
@@ -25,17 +15,7 @@
       "erro": null,
       "falhando_desde": null
     },
-    "yahoo/dow": {
-      "ok": true,
-      "erro": null,
-      "falhando_desde": null
-    },
     "yahoo/brent": {
-      "ok": true,
-      "erro": null,
-      "falhando_desde": null
-    },
-    "yahoo/wti": {
       "ok": true,
       "erro": null,
       "falhando_desde": null
@@ -50,17 +30,7 @@
       "erro": null,
       "falhando_desde": null
     },
-    "yahoo/algodao_ice": {
-      "ok": true,
-      "erro": null,
-      "falhando_desde": null
-    },
     "sgs/dolar": {
-      "ok": true,
-      "erro": null,
-      "falhando_desde": null
-    },
-    "sgs/euro": {
       "ok": true,
       "erro": null,
       "falhando_desde": null
@@ -71,11 +41,6 @@
       "falhando_desde": null
     },
     "imea/milho_primavera": {
-      "ok": true,
-      "erro": null,
-      "falhando_desde": null
-    },
-    "imea/algodao_primavera": {
       "ok": true,
       "erro": null,
       "falhando_desde": null
@@ -91,11 +56,6 @@
       "falhando_desde": null
     },
     "imea/milho_mt": {
-      "ok": true,
-      "erro": null,
-      "falhando_desde": null
-    },
-    "imea/algodao_mt": {
       "ok": true,
       "erro": null,
       "falhando_desde": null
