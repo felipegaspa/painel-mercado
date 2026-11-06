@@ -31,9 +31,9 @@
       "falhando_desde": null
     },
     "sgs/dolar": {
-      "ok": true,
-      "erro": null,
-      "falhando_desde": null
+      "ok": false,
+      "erro": "FalhaColeta: HTTP 502: '<!doctype html>\\r\\n<html lang=\"pt-br\">\\r\\n\\r\\n<head>\\r\\n<meta charset=\"utf-8\">\\r\\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\\r\\n\\r\\n    <link href=\"https://www.bcb.gov.br/svr_css/bootstrap'",
+      "falhando_desde": "2026-11-06T19:16:39-03:00"
     },
     "imea/soja_primavera": {
       "ok": true,
