@@ -31,9 +31,9 @@
       "falhando_desde": null
     },
     "sgs/dolar": {
-      "ok": false,
-      "erro": "FalhaColeta: HTTP 304: ''",
-      "falhando_desde": "2026-11-10T09:16:36-03:00"
+      "ok": true,
+      "erro": null,
+      "falhando_desde": null
     },
     "imea/soja_primavera": {
       "ok": true,
