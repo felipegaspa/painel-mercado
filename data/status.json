@@ -31,9 +31,9 @@
       "falhando_desde": null
     },
     "sgs/dolar": {
-      "ok": false,
-      "erro": "FalhaColeta: HTTP 503: '<html>\\r\\n  <head>\\r\\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\\r\\n\\r\\n    <style type=\"text/css\">\\r\\n      body {\\r\\n        font-family: \"Helvetica Neue\", Helvetica, Arial, sans-s'",
-      "falhando_desde": "2026-11-12T12:16:37-03:00"
+      "ok": true,
+      "erro": null,
+      "falhando_desde": null
     },
     "imea/soja_primavera": {
       "ok": true,
